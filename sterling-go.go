@@ -50,7 +50,7 @@ func (c *SPay) InterBankTransfer(txRequest *InterBankTransferRequest) (r *Transf
 	return
 }
 
-func (c *SPay) IntraBankTransfer(txRequest *SterlingBankTransferRequest) (r interface{}, err error) {
+func (c *SPay) IntraBankTransfer(txRequest *SterlingBankTransferRequest) (r *TransferResponse, err error) {
 	err = c.makeRequest(http.MethodPost, sterlingTransferEP, nil, nil, txRequest, r)
 	return
 }
