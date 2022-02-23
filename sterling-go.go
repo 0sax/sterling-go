@@ -5,21 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/0sax/sterling-go/tripleDES"
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"sterling-go/tripleDES"
 	"time"
 )
-
-
 
 type SPay struct {
 	key     string
 	cypher  string
 	baseUrl string
 	appId   string
-	client *http.Client
+	client  *http.Client
 }
 
 func New(key, cypher, appId, baseurl string) *SPay {
@@ -37,28 +35,34 @@ func New(key, cypher, appId, baseurl string) *SPay {
 	}
 }
 
-func (c *SPay) InterBankNameEnquiry() {
-	panic("implement me")
+func (c *SPay) InterBankNameEnquiry(enquiry *NameEnquiryRequest) (r *NameEnquiryResponse, err error) {
+	err = c.makeRequest(http.MethodPost, interbankNameEnquiryEP, nil, nil, enquiry, r)
+	return
 }
 
-func (c *SPay) IntraBankNameEnquiry() {
-	panic("implement me")
+func (c *SPay) IntraBankNameEnquiry(enquiry *NameEnquiryRequest) (r *NameEnquiryResponse, err error) {
+	err = c.makeRequest(http.MethodPost, sterlingNameEnquiryEP, nil, nil, enquiry, r)
+	return
 }
 
-func (c *SPay) InterBankTransfer() {
-	panic("implement me")
+func (c *SPay) InterBankTransfer(txRequest *InterBankTransferRequest) (r *TransferResponse, err error) {
+	err = c.makeRequest(http.MethodPost, interbankTransferEP, nil, nil, txRequest, r)
+	return
 }
 
-func (c *SPay) IntraBankTransfer() {
-	panic("implement me")
+func (c *SPay) IntraBankTransfer(txRequest *InterBankTransferRequest) (r interface{}, err error) {
+	err = c.makeRequest(http.MethodPost, sterlingTransferEP, nil, nil, txRequest, r)
+	return
 }
 
-func (c *SPay) OTPRequest() {
-	panic("implement me")
+func (c *SPay) OTPRequest(otpRequest *OTPRequest) (r interface{}, err error) {
+	err = c.makeRequest(http.MethodPost, otpRequestEP, nil, nil, otpRequest, r)
+	return
 }
 
-func (c *SPay) ValidateOTPRequest() {
-	panic("implement me")
+func (c *SPay) ValidateOTPRequest(otpRequest *OTPRequest) (r interface{}, err error) {
+	err = c.makeRequest(http.MethodPost, otpRequestEP, nil, nil, otpRequest, r)
+	return
 }
 
 // Request functions
@@ -149,6 +153,7 @@ type Error struct {
 	Body     string
 	Endpoint string
 }
+
 func (e Error) Error() string {
 	return fmt.Sprintf("Request To %v Endpoint Failed With Status Code %v | Body: %v", e.Endpoint, e.Code, e.Body)
 }
