@@ -82,7 +82,7 @@ func (c *SPay) decrypt(s1 string) (s string, err error) {
 func (c *SPay) makeRequest(method, ep string, urlParams, headers map[string]interface{}, body interface{}, responseTarget interface{}) error {
 
 	if reflect.TypeOf(responseTarget).Kind() != reflect.Ptr {
-		return errors.New("gomono: responseTarget must be a pointer to a struct for JSON unmarshalling")
+		return errors.New("responseTarget must be a pointer to a struct for JSON unmarshalling")
 	}
 
 	url := fmt.Sprintf("%v/%v", c.baseUrl, ep)
