@@ -8,6 +8,7 @@ const (
 	sterlingTransferEP     = "api/Spay/SBPT24txnRequest"
 	otpRequestEP           = "api/Spay/OTPRequest"
 	otpValidationEP        = "api/Spay/ValOTPRequest"
+	ListBanksEP = "api/Spay/GetBankListReq"
 )
 
 // Requests
@@ -50,6 +51,11 @@ type (
 		Translocation string `json:"Translocation,omitempty"`
 		Nuban         string `json:"nuban,omitempty"`
 		Otp           string `json:"otp,omitempty"`
+	}
+	ListBanksRequest struct {
+		ReferenceId   string `json:"Referenceid,omitempty"`
+		RequestType   int    `json:"RequestType,omitempty"`
+		Translocation string `json:"Translocation,omitempty"`
 	}
 )
 
