@@ -9,11 +9,11 @@ type SPay struct {
 	key     string
 	cypher  string
 	baseUrl string
-	appId   string
+	appId   int32
 	client  *http.Client
 }
 
-func New(key, cypher, appId, baseurl string) *SPay {
+func New(key, cypher, baseurl string, appId int32) *SPay {
 	return &SPay{
 		key:     key,
 		cypher:  cypher,

@@ -70,6 +70,30 @@ type (
 
 // Responses
 type (
+	Jacket struct {
+		XMLName xml.Name   `xml:"soap12:Envelope"`
+		Xsi     string     `xml:"xmlns:xsi,attr"`
+		Xsd     string     `xml:"xmlns:xsd,attr"`
+		Soap12  string     `xml:"xmlns:soap12,attr"`
+		Body    JacketBody `xml:"soap12:Body"`
+	}
+
+	JacketBody struct {
+		XMLName    xml.Name `xml:"soap12:Body"`
+		IBSBridges Bridges  `xml:"IBSBridges"`
+	}
+
+	Bridges struct {
+		XMLName xml.Name `xml:"IBSBridges"`
+		XMLns   string   `xml:"xmlns,attr"`
+		XML     Exml     `xml:"XML"`
+		AppID   int32    `xml:"Appid"`
+	}
+
+	Exml struct {
+		Value string `xml:",innerxml"`
+	}
+
 	IBSresponse struct {
 		XMLName      xml.Name    `xml:"IBSResponse"`
 		SessionID    string      `xml:"SessionID"`

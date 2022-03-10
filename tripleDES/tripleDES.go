@@ -8,7 +8,7 @@ import (
 
 func Encrypt(text, key, cypher string) (res string, err error) {
 
-	triplekey := key + key + key
+	triplekey := key //+ key + key
 	plaintext := []byte(text)
 	//Padding
 	if mod := len(plaintext) % des.BlockSize; mod != 0 {
@@ -23,7 +23,7 @@ func Encrypt(text, key, cypher string) (res string, err error) {
 		return
 	}
 
-	//fmt.Printf("%d bytes NewTripleDESCipher key with block size of %d bytes\n", len(triplekey), block.BlockSize)
+	fmt.Printf("%d bytes NewTripleDESCipher key with block size of %d bytes\n", len(triplekey), block.BlockSize) //debug delete
 	ciphertext := []byte(cypher)
 	iv := ciphertext[:des.BlockSize]
 
@@ -37,7 +37,7 @@ func Encrypt(text, key, cypher string) (res string, err error) {
 }
 func Decrypt(text, key, cypher string) (res string, err error) {
 
-	tripleKey := key + key + key
+	tripleKey := key //+ key + key
 	plaintext := []byte(text)
 	if mod := len(plaintext) % des.BlockSize; mod != 0 {
 		add := des.BlockSize - mod
