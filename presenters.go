@@ -2,13 +2,13 @@ package sterling_go
 
 const (
 	// ENDPOINTS
-	interbankNameEnquiryEP = "api/Spay/doInterbankNameEnquiry"
-	sterlingNameEnquiryEP  = "api/Spay/DoSterlingbankNameEnquiry"
-	interbankTransferEP    = "api/Spay/doInterbankTransfer"
+	interbankNameEnquiryEP = "api/Spay/InterbankNameEnquiry"
+	sterlingNameEnquiryEP  = "api/Spay/SBPNameEnquiry"
+	interbankTransferEP    = "api/Spay/InterbankTransferReq"
 	sterlingTransferEP     = "api/Spay/SBPT24txnRequest"
 	otpRequestEP           = "api/Spay/OTPRequest"
 	otpValidationEP        = "api/Spay/ValOTPRequest"
-	ListBanksEP = "api/Spay/GetBankListReq"
+	ListBanksEP            = "api/Spay/GetBankListReq"
 )
 
 // Requests

@@ -50,7 +50,7 @@ func (c *SPay) InterBankTransfer(txRequest *InterBankTransferRequest) (r *Transf
 	return
 }
 
-func (c *SPay) IntraBankTransfer(txRequest *SterlingBankTransferRequest) (r *TransferResponse, err error) {
+func (c *SPay) IntraBankTransfer(txRequest *SterlingBankTransferRequest) (r interface{}, err error) {
 	err = c.makeRequest(http.MethodPost, sterlingTransferEP, nil, nil, txRequest, r)
 	return
 }
@@ -69,7 +69,6 @@ func (c *SPay) ListBanks(lbr *ListBanksRequest) (r interface{}, err error) {
 	err = c.makeRequest(http.MethodPost, otpRequestEP, nil, nil, lbr, r)
 	return
 }
-
 
 // Request functions
 func (c *SPay) encryptStruct(i interface{}) (s string, err error) {
