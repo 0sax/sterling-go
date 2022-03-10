@@ -1,14 +1,7 @@
 package sterling_go
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"github.com/0sax/sterling-go/tripleDES"
-	"io/ioutil"
 	"net/http"
-	"reflect"
 	"time"
 )
 
@@ -35,130 +28,92 @@ func New(key, cypher, appId, baseurl string) *SPay {
 	}
 }
 
-func (c *SPay) InterBankNameEnquiry(enquiry *NameEnquiryRequest) (r *NameEnquiryResponse, err error) {
-	err = c.makeRequest(http.MethodPost, interbankNameEnquiryEP, nil, nil, enquiry, r)
-	return
-}
-
-func (c *SPay) IntraBankNameEnquiry(enquiry *NameEnquiryRequest) (r *NameEnquiryResponse, err error) {
-	err = c.makeRequest(http.MethodPost, sterlingNameEnquiryEP, nil, nil, enquiry, r)
-	return
-}
-
-func (c *SPay) InterBankTransfer(txRequest *InterBankTransferRequest) (r *TransferResponse, err error) {
-	err = c.makeRequest(http.MethodPost, interbankTransferEP, nil, nil, txRequest, r)
-	return
-}
-
-func (c *SPay) IntraBankTransfer(txRequest *SterlingBankTransferRequest) (r interface{}, err error) {
-	err = c.makeRequest(http.MethodPost, sterlingTransferEP, nil, nil, txRequest, r)
-	return
-}
-
-func (c *SPay) OTPRequest(otpRequest *OTPRequest) (r interface{}, err error) {
-	err = c.makeRequest(http.MethodPost, otpRequestEP, nil, nil, otpRequest, r)
-	return
-}
-
-func (c *SPay) ValidateOTPRequest(otpRequest *OTPRequest) (r interface{}, err error) {
-	err = c.makeRequest(http.MethodPost, otpValidationEP, nil, nil, otpRequest, r)
-	return
-}
-
-func (c *SPay) ListBanks(lbr *ListBanksRequest) (r interface{}, err error) {
-	err = c.makeRequest(http.MethodPost, otpRequestEP, nil, nil, lbr, r)
-	return
-}
-
-// Request functions
-func (c *SPay) encryptStruct(i interface{}) (s string, err error) {
-	b, err := json.Marshal(i)
+func (c *SPay) InterBankNameEnquiry(nuban, bankCode string, ref *int64) (name, sessionID, respCode string, err error) {
+	req := IBSRequest{
+		ReferenceId:         getRef(ref),
+		RequestType:         interBankNameEnquiry,
+		ToAccount:           nuban,
+		DestinationBankCode: bankCode,
+	}
+	resp, err := c.makeRequest(http.MethodPost, ep, nil, req)
 	if err != nil {
 		return
 	}
-
-	s, err = tripleDES.Encrypt(string(b), c.key, c.cypher)
+	name = resp.ResponseText
+	sessionID = resp.SessionID
+	respCode = resp.ResponseCode
 	return
 }
-func (c *SPay) decrypt(s1 string) (s string, err error) {
-	s, err = tripleDES.Decrypt(s1, c.key, c.cypher)
+
+func (c *SPay) SterlingBankNameEnquiry(nuban string, ref *int64) (name string, err error) {
+
+	req := &IBSRequest{
+		RequestType: sbpNameEnquiry,
+		ReferenceId: getRef(ref),
+		Nuban:       nuban,
+	}
+	resp, err := c.makeRequest(http.MethodPost, ep, nil, req)
+	if err != nil {
+		return
+	}
+	name = resp.ResponseText
 	return
 }
-func (c *SPay) makeRequest(method, ep string, urlParams, headers map[string]interface{}, body interface{}, responseTarget interface{}) error {
 
-	if reflect.TypeOf(responseTarget).Kind() != reflect.Ptr {
-		return errors.New("responseTarget must be a pointer to a struct for JSON unmarshalling")
+func (c *SPay) SterlingToSterlingTransfer(from, to, narr string, amt float64, ref *int64) (reference string, message string, err error) {
+	req := IBSRequest{
+		ReferenceId:      getRef(ref),
+		RequestType:      sterlingToSterlingFT,
+		FromAccount:      from,
+		ToAccount:        to,
+		Amount:           amt,
+		PaymentReference: narr,
 	}
-
-	url := fmt.Sprintf("%v/%v", c.baseUrl, ep)
-
-	if urlParams != nil {
-		mapIndex := 0
-		for k, v := range urlParams {
-			if mapIndex == 0 {
-				url = fmt.Sprintf("%v?%v=%v", url, k, v)
-			} else {
-				url = fmt.Sprintf("%v&%v=%v", url, k, v)
-			}
-			mapIndex++
-		}
-	}
-
-	b, err := c.encryptStruct(body)
+	resp, err := c.makeRequest(http.MethodPost, ep, nil, req)
 	if err != nil {
-		return err
+		return
 	}
+	reference = resp.ReferenceID
+	message = resp.ResponseText
 
-	req, err := http.NewRequest(method, url, bytes.NewReader([]byte(b)))
-	if err != nil {
-		return err
-	}
-
-	for k, v := range headers {
-		req.Header.Set(k, v.(string))
-	}
-	req.Header.Set("Appid", c.appId)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	bdy, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	txt, err := c.decrypt(string(bdy))
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode == 200 || resp.StatusCode == 201 {
-		err = json.Unmarshal([]byte(txt), &responseTarget)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	err = Error{
-		Code:     resp.StatusCode,
-		Body:     string(bdy),
-		Endpoint: req.URL.String(),
-	}
-	return err
-
+	return
 }
 
-type Error struct {
-	Code     int
-	Body     string
-	Endpoint string
+func (c *SPay) InterBankTransfer(from, to, toBank, toName, narr, sessionID, neResponse string, amt float64, ref *int64) (reference string, message string, err error) {
+	req := IBSRequest{
+		ReferenceId:         getRef(ref),
+		RequestType:         interBankFT,
+		SessionID:           sessionID,
+		FromAccount:         from,
+		ToAccount:           to,
+		Amount:              amt,
+		DestinationBankCode: toBank,
+		NEResponse:          neResponse,
+		BeneficiaryName:     toName,
+		PaymentReference:    narr,
+	}
+	resp, err := c.makeRequest(http.MethodPost, ep, nil, req)
+	if err != nil {
+		return
+	}
+	reference = resp.ReferenceID
+	message = resp.ResponseText
+
+	return
 }
 
-func (e Error) Error() string {
-	return fmt.Sprintf("Request To %v Endpoint Failed With Status Code %v | Body: %v", e.Endpoint, e.Code, e.Body)
+// ListBanks returns a list of NIP Participating Banks
+func (c *SPay) ListBanks(ref *int64) (banks []Bank, err error) {
+
+	req := &IBSRequest{
+		RequestType: listBanks,
+		ReferenceId: getRef(ref),
+	}
+
+	resp, err := c.makeRequest(http.MethodPost, ep, nil, req)
+	if err != nil {
+		return
+	}
+	banks = resp.NIPBankList.Banks
+	return
 }

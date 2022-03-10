@@ -1,76 +1,60 @@
 package sterling_go
 
+import "encoding/xml"
+
 const (
-	// ENDPOINTS
-	interbankNameEnquiryEP = "api/Spay/InterbankNameEnquiry"
-	sterlingNameEnquiryEP  = "api/Spay/SBPNameEnquiry"
-	interbankTransferEP    = "api/Spay/InterbankTransferReq"
-	sterlingTransferEP     = "api/Spay/SBPT24txnRequest"
-	otpRequestEP           = "api/Spay/OTPRequest"
-	otpValidationEP        = "api/Spay/ValOTPRequest"
-	ListBanksEP            = "api/Spay/GetBankListReq"
+	// Base Url
+	ep      = "/IBSIntegrator/IBSBridge.asmx"
+	baseUrl = "https://sbdevzone.sterling.ng"
+	// Request Types
+	listBanks            = 327
+	sbpNameEnquiry       = 219
+	interBankNameEnquiry = 105
+	sterlingToSterlingFT = 102
+	interBankFT          = 101
 )
 
 // Requests
 type (
-	NameEnquiryRequest struct {
-		ReferenceId         string `json:"Referenceid,omitempty"`
-		RequestType         int    `json:"RequestType,omitempty"`
-		Translocation       string `json:"Translocation,omitempty"`
-		ToAccount           string `json:"ToAccount,omitempty"`
-		DestinationBankCode string `json:"DestinationBankCode,omitempty"`
-		Nuban               string `json:"NUBAN,omitempty"`
-	}
-	InterBankTransferRequest struct {
-		ReferenceId         string `json:"Referenceid,omitempty"`
-		SessionID           string `json:"SessionID,omitempty"`
-		FromAccount         string `json:"FromAccount,omitempty"`
-		ToAccount           string `json:"ToAccount,omitempty"`
-		Amount              string `json:"Amount,omitempty"`
-		DestinationBankCode string `json:"DestinationBankCode,omitempty"`
-		NEResponse          string `json:"NEResponse,omitempty"`
-		BeneficiaryName     string `json:"BenefiName,omitempty"`
-		PaymentReference    string `json:"PaymentReference,omitempty"`
-		RequestType         int    `json:"RequestType,omitempty"`
-		Translocation       string `json:"Translocation,omitempty"`
-	}
-	SterlingBankTransferRequest struct {
-		ReferenceID   string `json:"Referenceid,omitempty"`
-		RequestType   int    `json:"RequestType,omitempty"`
-		Translocation string `json:"Translocation,omitempty"`
-		Amt           string `json:"amt,omitempty"`
-		TellerID      string `json:"tellerid,omitempty"`
-		FromAccount   string `json:"frmacct,omitempty"`
-		ToAccount     string `json:"toacct,omitempty"`
-		PaymentRef    string `json:"paymentRef,omitempty"`
-		Remarks       string `json:"remarks,omitempty"`
-	}
-	OTPRequest struct {
-		ReferenceId   string `json:"Referenceid,omitempty"`
-		RequestType   int    `json:"RequestType,omitempty"`
-		Translocation string `json:"Translocation,omitempty"`
-		Nuban         string `json:"nuban,omitempty"`
-		Otp           string `json:"otp,omitempty"`
-	}
-	ListBanksRequest struct {
-		ReferenceId   string `json:"Referenceid,omitempty"`
-		RequestType   int    `json:"RequestType,omitempty"`
-		Translocation string `json:"Translocation,omitempty"`
+	IBSRequest struct {
+		XMLName             xml.Name `xml:"IBSRequest"`
+		RequestType         int      `xml:"RequestType,omitempty"`
+		ReferenceId         int64    `xml:"ReferenceID,omitempty"`
+		Translocation       string   `xml:"translocation,omitempty"`
+		ToAccount           string   `xml:"ToAccount,omitempty"`
+		DestinationBankCode string   `xml:"DestinationBankCode,omitempty"`
+		Nuban               string   `xml:"NUBAN,omitempty"`
+		SessionID           string   `xml:"SessionID,omitempty"`
+		FromAccount         string   `xml:"FromAccount,omitempty"`
+		Amount              float64  `xml:"Amount,omitempty"`
+		NEResponse          string   `xml:"NEResponse,omitempty"`
+		BeneficiaryName     string   `xml:"BenefiName,omitempty"`
+		PaymentReference    string   `xml:"PaymentReference,omitempty"`
+		AppID               string   `xml:"AppID,omitempty"`
 	}
 )
 
 // Responses
 type (
-	NameEnquiryResponse struct {
-		AccountName   string `json:"AccountName"`
-		SessionID     string `json:"sessionID"`
-		AccountNumber string `json:"AccountNumber"`
-		Status        string `json:"status"`
-		BVN           string `json:"BVN,omitempty"`
-		ResponseText  string `json:"ResponseText"`
+	IBSresponse struct {
+		XMLName      xml.Name    `xml:"IBSResponse"`
+		SessionID    string      `xml:"SessionID"`
+		ReferenceID  string      `xml:"ReferenceID"`
+		RequestType  string      `xml:"RequestType"`
+		ResponseCode string      `xml:"ResponseCode"`
+		ResponseText string      `xml:"ResponseText"`
+		MobileNum    string      `xml:"MobileNum"`
+		NIPBankList  NIPBankList `xml:"NIPBankList"`
 	}
-	TransferResponse struct {
-		ResponseText string `json:"ResponseText"`
-		Status       string `json:"status"`
+
+	NIPBankList struct {
+		XMLName xml.Name `xml:"NIPBankList"`
+		Banks   []Bank   `xml:"Rec"`
+	}
+
+	Bank struct {
+		XMLName  xml.Name `xml:"Rec"`
+		BankName string   `xml:"BANKNAME"`
+		BankCode string   `xml:"BANKCODE"`
 	}
 )
