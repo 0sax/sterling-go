@@ -5,7 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/forgoer/openssl"
+	"github.com/0sax/sterling-go/tripleDES"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -13,52 +13,45 @@ import (
 	"time"
 )
 
-type bitString string
-
-func (b bitString) AsByteSlice() []byte {
-	var out []byte
-	var str string
-
-	for i := len(b); i > 0; i -= 8 {
-		if i-8 < 0 {
-			str = string(b[0:i])
-		} else {
-			str = string(b[i-8 : i])
-		}
-		v, err := strconv.ParseUint(str, 2, 8)
-		if err != nil {
-			panic(err)
-		}
-		out = append([]byte{byte(v)}, out...)
-	}
-	return out
-}
+//
+//type bitString string
+//
+//func (b bitString) AsByteSlice() []byte {
+//	var out []byte
+//	var str string
+//
+//	for i := len(b); i > 0; i -= 8 {
+//		if i-8 < 0 {
+//			str = string(b[0:i])
+//		} else {
+//			str = string(b[i-8 : i])
+//		}
+//		v, err := strconv.ParseUint(str, 2, 8)
+//		if err != nil {
+//			panic(err)
+//		}
+//		out = append([]byte{byte(v)}, out...)
+//	}
+//	return out
+//}
 
 // Request functions
-func (c *SPay) encrypt(b []byte) (s string, err error) {
+func (c *SPay) encrypt(b []byte) (s []byte, err error) {
 
-	fmt.Printf("unencrypted request string: %v\n", string(b)) //debug delete
+	txt, err := tripleDES.Encrypt(c.encryptionServiceUrl, string(b), c.key, c.cypher)
 
-	k := bitString(c.key).AsByteSlice()
-	cy := bitString(c.cypher).AsByteSlice()
-
-	d, err := openssl.Des3CBCEncrypt(b, k, cy, openssl.PKCS7_PADDING)
-	if err == nil {
-		s = string(d)
+	if txt != "" {
+		s = []byte(txt)
 	}
-	//s, err = tripleDES.Decrypt(s1, c.key, c.cypher)
 	return
 }
-func (c *SPay) decrypt(s1 string) (s string, err error) {
+func (c *SPay) decrypt(s1 []byte) (s []byte, err error) {
 
-	k := bitString(c.key).AsByteSlice()
-	cy := bitString(c.cypher).AsByteSlice()
+	txt, err := tripleDES.Decrypt(c.encryptionServiceUrl, string(s1), c.key, c.cypher)
 
-	b, err := openssl.Des3CBCDecrypt([]byte(s1), k, cy, openssl.PKCS5_PADDING)
-	if err == nil {
-		s = string(b)
+	if txt != "" {
+		s = []byte(txt)
 	}
-	//s, err = tripleDES.Decrypt(s1, c.key, c.cypher)
 	return
 }
 func (c *SPay) makeRequest(method, ep string, headers map[string]interface{}, body interface{}) (responseTarget *IBSresponse, err error) {
@@ -70,18 +63,6 @@ func (c *SPay) makeRequest(method, ep string, headers map[string]interface{}, bo
 
 	url := fmt.Sprintf("%v%v", c.baseUrl, ep)
 
-	//if urlParams != nil {
-	//	mapIndex := 0
-	//	for k, v := range urlParams {
-	//		if mapIndex == 0 {
-	//			url = fmt.Sprintf("%v?%v=%v", url, k, v)
-	//		} else {
-	//			url = fmt.Sprintf("%v&%v=%v", url, k, v)
-	//		}
-	//		mapIndex++
-	//	}
-	//}
-
 	//var b string
 	b, err := xml.Marshal(body)
 	if err != nil {
@@ -89,17 +70,24 @@ func (c *SPay) makeRequest(method, ep string, headers map[string]interface{}, bo
 		return
 	}
 
-	fmt.Printf("\ninternal request:\n %v\n", xml.Header+string(b)) //debug delete
+	fmt.Printf("\n unencrypted internal request:\n %v\n", string(b)) //debug delete
+
+	b, err = c.encrypt(b)
+	if err != nil {
+		fmt.Printf("error at point 2: %v\n", err) //debug delete
+		return
+	}
+
+	fmt.Printf("\n encrupted internal request:\n %v\n", string(b)) //debug delete
 
 	j := Jacket{
 		Xsi:    "http://www.w3.org/2001/XMLSchema-instance",
 		Xsd:    "http://www.w3.org/2001/XMLSchema",
-		Soap12: "http://www.w3.org/2003/05/soap-envelope",
+		Soap12: "http://schemas.xmlsoap.org/soap/envelope/",
 		Body: JacketBody{
 			IBSBridges: Bridges{
 				XMLns: "http://tempuri.org/",
 				XML:   Exml{string(b)},
-				//XML:   Exml{fmt.Sprintf("%v%v",xml.Header,string(b))},
 				AppID: c.appId,
 			},
 		},
@@ -111,7 +99,7 @@ func (c *SPay) makeRequest(method, ep string, headers map[string]interface{}, bo
 		return
 	}
 
-	fmt.Printf("\nwrapped encrypted request:\n %v\n", xml.Header+string(d)) //debug delete
+	fmt.Printf("\nwrapped request:\n %s\n", d) //debug delete
 
 	req, err := http.NewRequest(method, url, bytes.NewReader(d))
 	if err != nil {
@@ -123,7 +111,9 @@ func (c *SPay) makeRequest(method, ep string, headers map[string]interface{}, bo
 		req.Header.Set(k, v.(string))
 	}
 	req.Header.Set("Appid", strconv.Itoa(int(c.appId)))
-	req.Header.Set("Content-Type", "application/soap+xml")
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	//req.Header.Add("Content-Type", "charset=utf-8")
+	req.Header.Set("SOAPAction", "http://tempuri.org/IBSBridges")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -139,18 +129,46 @@ func (c *SPay) makeRequest(method, ep string, headers map[string]interface{}, bo
 	}
 
 	fmt.Printf("\nresponse status code:\n %v\n", resp.StatusCode) //debug delete
-	fmt.Printf("\nunencrypted response:\n %v\n", string(bdy))     //debug delete
+	fmt.Printf("\nresponse:\n %v\n", string(bdy))                 //debug delete
 
-	txt, err := c.decrypt(string(bdy))
-	if err != nil {
-		fmt.Printf("error at point 5: %v\n", err) //debug delete
-		return
-	}
+	if resp.StatusCode == 200 {
 
-	if resp.StatusCode == 200 || resp.StatusCode == 201 {
-		err = xml.Unmarshal([]byte(txt), &responseTarget)
-		fmt.Printf("error at point 6: %v\n", err) //debug delete
+		var wbresp *ResponseJacket
+		// unmarshal body
+		err = xml.Unmarshal(bdy, &wbresp)
+		if err != nil {
+			fmt.Printf("error at point 6a: %v\n", err) //debug delete
+			return
+		}
+
+		// Get string
+		fmt.Printf("\nmarshalled response object:\n %+v\n", wbresp) //debug delete
+
+		s := wbresp.Body.IBSBridgeResp.IBSBridgesResult
+
+		fmt.Printf("\nundecrypted string response:\n %v\n", s) //debug delete
+
+		// Decrypt strung
+		var ds []byte
+		ds, err = c.decrypt([]byte(s))
+		if err != nil {
+			fmt.Printf("error at point 6.7: %v\n", err) //debug delete
+			return
+		}
+
+		fmt.Printf("\ndecrypted string response:\n %v\n", string(ds)) //debug delete
+
+		// Unmarshal string to response target
+		err = xml.Unmarshal(ds, &responseTarget)
+		if err != nil {
+			fmt.Printf("error at point 7: %v\n", err) //debug delete
+			return
+		}
+
+		fmt.Printf("\nmarshalled response object22:\n %+v\n", responseTarget) //debug delete
+
 		return
+
 	}
 
 	err = Error{

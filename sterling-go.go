@@ -6,19 +6,21 @@ import (
 )
 
 type SPay struct {
-	key     string
-	cypher  string
-	baseUrl string
-	appId   int32
-	client  *http.Client
+	key                  string
+	cypher               string
+	baseUrl              string
+	encryptionServiceUrl string
+	appId                int32
+	client               *http.Client
 }
 
-func New(key, cypher, baseurl string, appId int32) *SPay {
+func New(key, cypher, baseurl, encServiceUrl string, appId int32) *SPay {
 	return &SPay{
-		key:     key,
-		cypher:  cypher,
-		baseUrl: baseurl,
-		appId:   appId,
+		key:                  key,
+		cypher:               cypher,
+		baseUrl:              baseurl,
+		appId:                appId,
+		encryptionServiceUrl: encServiceUrl,
 		client: &http.Client{
 			Transport:     nil,
 			CheckRedirect: nil,

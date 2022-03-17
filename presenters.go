@@ -71,16 +71,35 @@ type (
 // Responses
 type (
 	Jacket struct {
-		XMLName xml.Name   `xml:"soap12:Envelope"`
+		XMLName xml.Name   `xml:"soap:Envelope"`
 		Xsi     string     `xml:"xmlns:xsi,attr"`
 		Xsd     string     `xml:"xmlns:xsd,attr"`
-		Soap12  string     `xml:"xmlns:soap12,attr"`
-		Body    JacketBody `xml:"soap12:Body"`
+		Soap12  string     `xml:"xmlns:soap,attr"`
+		Body    JacketBody `xml:"soap:Body"`
 	}
 
 	JacketBody struct {
-		XMLName    xml.Name `xml:"soap12:Body"`
-		IBSBridges Bridges  `xml:"IBSBridges"`
+		XMLName    xml.Name `xml:"soap:Body"`
+		IBSBridges Bridges  `xml:"IBSBridges,omitempty"`
+	}
+	ResponseJacket struct {
+		XMLName xml.Name           `xml:"Envelope"`
+		Xsi     string             `xml:"xmlns:xsi,attr"`
+		Xsd     string             `xml:"xmlns:xsd,attr"`
+		Soap12  string             `xml:"xmlns:soap,attr"`
+		Body    ResponseJacketBody `xml:"Body"`
+	}
+
+	ResponseJacketBody struct {
+		XMLName       xml.Name   `xml:"Body"`
+		IBSBridges    Bridges    `xml:"IBSBridges,omitempty"`
+		IBSBridgeResp BridgeResp `xml:"IBSBridgesResponse,omitempty"`
+	}
+
+	BridgeResp struct {
+		XMLName          xml.Name `xml:"IBSBridgesResponse"`
+		Xmlns            string   `xml:"xmlns,attr"`
+		IBSBridgesResult string   `xml:"IBSBridgesResult"`
 	}
 
 	Bridges struct {
@@ -102,11 +121,11 @@ type (
 		ResponseCode string      `xml:"ResponseCode"`
 		ResponseText string      `xml:"ResponseText"`
 		MobileNum    string      `xml:"MobileNum"`
-		NIPBankList  NIPBankList `xml:"NIPBankList"`
+		NIPBankList  NIPBankList `xml:"NIPBanklist"`
 	}
 
 	NIPBankList struct {
-		XMLName xml.Name `xml:"NIPBankList"`
+		XMLName xml.Name `xml:"NIPBanklist"`
 		Banks   []Bank   `xml:"Rec"`
 	}
 
